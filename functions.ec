@@ -194,7 +194,7 @@ void task_3() {
     }
 
     exec sql begin work;
-    exec sql declare curs cursor for
+    exec sql declare curs_1 cursor for
         select spj.n_post, spj.kol, avg_rim.avg_kol
         from s
         join spj on s.n_post = spj.n_post
@@ -204,13 +204,13 @@ void task_3() {
             where j.town = 'Рим'
             group by spj.n_post) as avg_rim on s.n_post = avg_rim.n_post
         where spj.kol >= 3 * avg_rim.avg_kol;
-    exec sql open curs;
+    exec sql open curs_1;
 
     if (check_warnings("Open cursor")) {
         return;
     }
 
-    exec sql fetch next curs into :data.n_post, :data.kol, :data.avg_kol;
+    exec sql fetch next curs_1 into :data.n_post, :data.kol, :data.avg_kol;
     if (sqlca.sqlcode == 0) {
         rows++;
         printf("Поставщик\tОбъем поставки\tСредний объем поставки\n");
@@ -218,7 +218,7 @@ void task_3() {
     }
 
     while (sqlca.sqlcode == 0) {
-        exec sql fetch next curs into :data.n_post, :data.kol, :data.avg_kol;
+        exec sql fetch next curs_1 into :data.n_post, :data.kol, :data.avg_kol;
 
         if (sqlca.sqlcode == 0) {
             rows++;
@@ -226,9 +226,61 @@ void task_3() {
         }
     }
 
-    exec sql close curs;
+    exec sql close curs_1;
 
-    if(check_warnings("Task 2")) {
+    if(check_warnings("Task 3")) {
+        exec sql rollback work;
+    }
+    else {
+        exec sql commit work;
+    }
+}
+
+void task_4() {
+    int rows = 0;
+
+    exec sql begin declare section;
+    char n_izd[2 * 6 + 1];
+    exec sql end declare section;
+
+    if (check_warnings("Declared")) {
+        return;
+    }
+
+    exec sql begin work;
+    exec sql declare curs_2 cursor for
+        select j.n_izd
+        from j
+        except
+        select spj.n_izd
+        from spj
+        join p on spj.n_det = p.n_det
+        where p.cvet = 'Красный';
+    exec sql open curs_2;
+
+    if (check_warnings("Open cursor")) {
+        return;
+    }
+
+    exec sql fetch next curs_2 into :n_izd;
+    if (sqlca.sqlcode == 0) {
+        rows++;
+        printf("n_izd\n");
+        printf("%s\n", n_izd);
+    }
+
+    while (sqlca.sqlcode == 0) {
+        exec sql fetch next curs_2 into :n_izd;
+
+        if (sqlca.sqlcode == 0) {
+            rows++;
+            printf("%s\n", n_izd);
+        }
+    }
+
+    exec sql close curs_2;
+
+    if(check_warnings("Task 4")) {
         exec sql rollback work;
     }
     else {
