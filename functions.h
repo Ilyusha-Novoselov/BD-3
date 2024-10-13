@@ -1,6 +1,5 @@
 #define DB "students@students.ami.nstu.ru"
 #define ERROR 1
-#define WARNING 2
 
 void print_errors(const char* theOperation);
 void check_errors(const char* theOperation);
