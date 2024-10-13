@@ -158,11 +158,12 @@ void task_1() {
     }
 
     exec sql begin work; // Начало новой транзакции
-    exec sql select count(distinct spj.n_det) into :count
+    exec sql select count(distinct spj.n_det) into:count
              from spj
-             join j on spj.n_izd = j.n_izd
-             where j.town = 'Париж';
-
+             where spj.n_post in (select distinct spj.n_post
+                                 from spj
+                                 join j on spj.n_izd = j.n_izd
+                                 where j.town = 'Париж');
     if(check_warnings("Task 1")) {
         exec sql rollback work; // Откат транзакции
     }
@@ -282,10 +283,12 @@ void task_4() {
         select j.n_izd
         from j
         except
-        select spj.n_izd
+        select distinct spj.n_izd
         from spj
-        join p on spj.n_det = p.n_det
-        where p.cvet = 'Красный';
+        where spj.n_post in (select distinct spj.n_post
+                            from spj
+                            join p on spj.n_det = p.n_det
+                            where p.cvet = 'Красный');
     exec sql open curs_2; // Открытие курсора
 
     if (check_warnings("Open cursor")) {
@@ -346,13 +349,11 @@ void task_5() {
     exec sql declare curs_3 cursor for 
         select *
         from j
-        where j.n_izd not in (select distinct spj.n_izd
-                            from spj
-                            join p on spj.n_det = p.n_det
-                            where p.ves <= 12)
-        and exists (select 1
-                    from spj
-                    where spj.n_izd = j.n_izd);
+        where j.n_izd in (select spj.n_izd
+                        from spj
+                        join p on p.n_det=spj.n_det
+                        group by spj.n_izd
+                        having min(p.ves) > 12);
     exec sql open curs_3; // Открытие курсора
 
     if (check_warnings("Open cursor")) {
