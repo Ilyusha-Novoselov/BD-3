@@ -151,6 +151,11 @@ void task_1() {
     int count = 0;
     exec sql end declare section;
 
+    if (check_warnings("Declared")) {
+        exec sql rollback work;
+        return;
+    }
+
     exec sql begin work;
     exec sql select count(distinct spj.n_det) into :count
              from spj
@@ -196,6 +201,7 @@ void task_3() {
     exec sql end declare section;
 
     if (check_warnings("Declared")) {
+        exec sql rollback work;
         return;
     }
 
@@ -213,6 +219,7 @@ void task_3() {
     exec sql open curs_1;
 
     if (check_warnings("Open cursor")) {
+        exec sql rollback work;
         return;
     }
 
@@ -250,6 +257,7 @@ void task_4() {
     exec sql end declare section;
 
     if (check_warnings("Declared")) {
+        exec sql rollback work;
         return;
     }
 
@@ -265,6 +273,7 @@ void task_4() {
     exec sql open curs_2;
 
     if (check_warnings("Open cursor")) {
+        exec sql rollback work;
         return;
     }
 
@@ -306,6 +315,7 @@ void task_5() {
     exec sql end declare section;
 
     if (check_warnings("Declared")) {
+        exec sql rollback work;
         return;
     }
 
@@ -320,6 +330,7 @@ void task_5() {
     exec sql open curs_3;
 
     if (check_warnings("Open cursor")) {
+        exec sql rollback work;
         return;
     }
 
