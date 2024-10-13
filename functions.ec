@@ -140,7 +140,7 @@ void table_rollback() {
         exec sql rollback work;
     }
     else {
-        printf("Changed: %ld rows\n", sqlca.sqlerrd[2]);
+        printf("Changed: %ld records\n", sqlca.sqlerrd[2]);
         exec sql commit work;
     }
 }
@@ -184,7 +184,7 @@ void task_2() {
         exec sql rollback work;
     }
     else {
-        printf("Changed: %ld rows\n", sqlca.sqlerrd[2]);
+        printf("Changed: %ld records\n", sqlca.sqlerrd[2]);
         exec sql commit work;
     }
 }
@@ -245,6 +245,7 @@ void task_3() {
         exec sql rollback work;
     }
     else {
+        printf("Find: %d records\n", rows);
         exec sql commit work;
     }
 }
@@ -299,6 +300,7 @@ void task_4() {
         exec sql rollback work;
     }
     else {
+        printf("Find: %d records\n", rows);
         exec sql commit work;
     }
 }
@@ -324,9 +326,12 @@ void task_5() {
         select *
         from j
         where j.n_izd not in (select distinct spj.n_izd
-                             from spj
-                             join p on spj.n_det = p.n_det
-                             where p.ves <= 12);
+                            from spj
+                            join p on spj.n_det = p.n_det
+                            where p.ves <= 12)
+        and exists (select 1
+                    from spj
+                    where spj.n_izd = j.n_izd);
     exec sql open curs_3;
 
     if (check_warnings("Open cursor")) {
@@ -356,6 +361,7 @@ void task_5() {
         exec sql rollback work;
     }
     else {
+        printf("Find: %d records\n", rows);
         exec sql commit work;
     }
 }
