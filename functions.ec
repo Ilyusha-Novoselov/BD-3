@@ -199,6 +199,8 @@ void task_3() {
         int kol;
         float avg_kol;
     } data;
+    // Индикаторы для проверки NULL
+    int kol_ind;
     exec sql end declare section; // Конец секции объявления переменных
 
     if (check_warnings("Declared")) {
@@ -226,19 +228,27 @@ void task_3() {
     }
 
     // Извлечение следующей строки результата из открытого курсора
-    exec sql fetch next curs_1 into :data.n_post, :data.kol, :data.avg_kol;
+    exec sql fetch next curs_1 into :data.n_post, :data.kol:kol_ind, :data.avg_kol;
     if (sqlca.sqlcode == 0) {
         rows++;
         printf("Поставщик\tОбъем поставки\tСредний объем поставки\n");
+        // Проверка на NULL
+        if(kol_ind < 0) {
+            data.kol = 0;
+        }
         printf("%s\t\t%d\t\t%f\n", data.n_post, data.kol, data.avg_kol);
     }
 
     while (sqlca.sqlcode == 0) {
         // Извлечение следующей строки результата из открытого курсора
-        exec sql fetch next curs_1 into :data.n_post, :data.kol, :data.avg_kol;
+        exec sql fetch next curs_1 into :data.n_post, :data.kol:kol_ind, :data.avg_kol;
 
         if (sqlca.sqlcode == 0) {
             rows++;
+            // Проверка на NULL
+            if(kol_ind < 0) {
+                data.kol = 0;
+            }
             printf("%s\t\t%d\t\t%f\n", data.n_post, data.kol, data.avg_kol);
         }
     }
@@ -321,6 +331,9 @@ void task_5() {
         char name[2 * 20 + 1];
         char town[2 * 20 + 1];
     } j;
+    // Индикаторы для проверки NULL
+    int name_ind;
+    int town_ind;
     exec sql end declare section; // Конец секции объявления переменных
 
     if (check_warnings("Declared")) {
@@ -347,19 +360,33 @@ void task_5() {
         return;
     }
     // Извлечение следующей строки результата из открытого курсора
-    exec sql fetch next curs_3 into :j.n_izd, :j.name, :j.town;
+    exec sql fetch next curs_3 into :j.n_izd, :j.name:name_ind, :j.town:town_ind;
     if (sqlca.sqlcode == 0) {
         rows++;
         printf("n_izd\t\tname\t\t\ttown\n");
+        // Проверка на NULL
+        if(name_ind < 0) {
+            strcpy(j.name, "NULL");
+        }
+        if(town_ind < 0) {
+            strcpy(j.town, "NULL");
+        }
         printf("%s\t\t%s\t%s\n", j.n_izd, j.name, j.town);
     }
 
     while (sqlca.sqlcode == 0) {
         // Извлечение следующей строки результата из открытого курсора
-        exec sql fetch next curs_3 into :j.n_izd, :j.name, :j.town;
+        exec sql fetch next curs_3 into :j.n_izd, :j.name:name_ind, :j.town:town_ind;
 
         if (sqlca.sqlcode == 0) {
             rows++;
+            // Проверка на NULL
+            if(name_ind < 0) {
+                strcpy(j.name, "NULL");
+            }
+            if(town_ind < 0) {
+                strcpy(j.town, "NULL");
+            }
             printf("%s\t\t%s\t%s\n", j.n_izd, j.name, j.town);
         }
     }
