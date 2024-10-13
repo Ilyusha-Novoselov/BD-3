@@ -287,3 +287,58 @@ void task_4() {
         exec sql commit work;
     }
 }
+
+void task_5() {
+    int rows = 0;
+
+    exec sql begin declare section;
+    struct {
+        char n_izd[2 * 6 + 1];
+        char name[2 * 20 + 1];
+        char town[2 * 20 + 1];
+    } j;
+    exec sql end declare section;
+
+    if (check_warnings("Declared")) {
+        return;
+    }
+
+    exec sql begin work;
+    exec sql declare curs_3 cursor for
+        select *
+        from j
+        where j.n_izd not in (select distinct spj.n_izd
+                             from spj
+                             join p on spj.n_det = p.n_det
+                             where p.ves <= 12);
+    exec sql open curs_3;
+
+    if (check_warnings("Open cursor")) {
+        return;
+    }
+
+    exec sql fetch next curs_3 into :j.n_izd, :j.name, :j.town;
+    if (sqlca.sqlcode == 0) {
+        rows++;
+        printf("n_izd\t\tname\t\t\ttown\n");
+        printf("%s\t\t%s\t%s\n", j.n_izd, j.name, j.town);
+    }
+
+    while (sqlca.sqlcode == 0) {
+        exec sql fetch next curs_3 into :j.n_izd, :j.name, :j.town;
+
+        if (sqlca.sqlcode == 0) {
+            rows++;
+            printf("%s\t\t%s\t%s\n", j.n_izd, j.name, j.town);
+        }
+    }
+
+    exec sql close curs_3;
+
+    if(check_warnings("Task 5")) {
+        exec sql rollback work;
+    }
+    else {
+        exec sql commit work;
+    }
+}
