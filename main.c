@@ -25,6 +25,9 @@ int main() {
             case 2:
                 task_2();
                 break;
+            case 3:
+                task_3();
+                break;
             case 6:
                 table_rollback();
                 break;

@@ -177,3 +177,61 @@ void task_2() {
         exec sql commit work;
     }
 }
+
+void task_3() {
+    int rows = 0;
+
+    exec sql begin declare section;
+    struct {
+        char n_post[2 * 6 + 1];
+        int kol;
+        float avg_kol;
+    } data;
+    exec sql end declare section;
+
+    if (check_warnings("Declared")) {
+        return;
+    }
+
+    exec sql begin work;
+    exec sql declare curs cursor for
+        select spj.n_post, spj.kol, avg_rim.avg_kol
+        from s
+        join spj on s.n_post = spj.n_post
+        join (select spj.n_post, avg(spj.kol) as avg_kol
+            from spj
+            join j on spj.n_izd = j.n_izd
+            where j.town = 'Рим'
+            group by spj.n_post) as avg_rim on s.n_post = avg_rim.n_post
+        where spj.kol >= 3 * avg_rim.avg_kol;
+    exec sql open curs;
+
+    if (check_warnings("Open cursor")) {
+        return;
+    }
+
+    exec sql fetch next curs into :data.n_post, :data.kol, :data.avg_kol;
+    if (sqlca.sqlcode == 0) {
+        rows++;
+        printf("Поставщик\tОбъем поставки\tСредний объем поставки\n");
+        printf("%s\t\t%d\t\t%f\n", data.n_post, data.kol, data.avg_kol);
+    }
+
+    while (sqlca.sqlcode == 0) {
+        exec sql fetch next curs into :data.n_post, :data.kol, :data.avg_kol;
+
+        if (sqlca.sqlcode == 0) {
+            rows++;
+            printf("%s\t\t%d\t\t%f\n", data.n_post, data.kol, data.avg_kol);
+        }
+    }
+
+    exec sql close curs;
+
+    if(check_warnings("Task 2")) {
+        exec sql rollback work;
+    }
+    else {
+        exec sql commit work;
+    }
+}
