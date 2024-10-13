@@ -15,6 +15,7 @@ void check_errors(const char* theOperation) {
 }
 
 int check_warnings(const char* theOperation) {
+    // Если выполнилось с ошибкой
     if (sqlca.sqlcode < 0) {
         print_warnings(theOperation);
         return 1;
@@ -28,27 +29,27 @@ void print_warnings(const char* theOperation) {
 }
 
 void connect_db(const char* theLogin, const char* thePassword) {
-    exec sql begin declare section;
+    exec sql begin declare section; // Начало секции объявления переменных
     const char* login = theLogin;
     const char* password = thePassword;
     const char* db = DB;
-    exec sql end declare section;
+    exec sql end declare section; // Конец секции объявления переменных
 
-    exec sql connect to :db user :login using :password;
+    exec sql connect to :db user :login using :password; // Устанавливаем соединение с бд
     check_errors("Connect to db");
 }
 
 void connect_schema(const char* theSchema) {
-    exec sql begin declare section;
+    exec sql begin declare section; // Начало секции объявления переменных
     const char* schema = theSchema;
-    exec sql end declare section;
+    exec sql end declare section; // Конец секции объявления переменных
 
-    exec sql set search_path to :schema;
+    exec sql set search_path to :schema; // Устанавливаем соединение со схемой
     check_errors("Connect schema");
 }
 
 void table_rollback() {
-    exec sql begin work;
+    exec sql begin work; // Начало новой транзакции
 
     exec sql drop table if exists j cascade;
 
@@ -137,42 +138,42 @@ void table_rollback() {
         ('S5', 'P6', 'J4', 500);
 
     if(check_warnings("Table rollback")) {
-        exec sql rollback work;
+        exec sql rollback work; // Откат транзакции
     }
     else {
         printf("Changed: %ld records\n", sqlca.sqlerrd[2]);
-        exec sql commit work;
+        exec sql commit work; // Завершение транзакции
     }
 }
 
 
 void task_1() {
-    exec sql begin declare section;
+    exec sql begin declare section; // Начало секции объявления переменных
     int count = 0;
-    exec sql end declare section;
+    exec sql end declare section; // Конец секции объявления переменных
 
     if (check_warnings("Declared")) {
-        exec sql rollback work;
+        exec sql rollback work; // Откат транзакции
         return;
     }
 
-    exec sql begin work;
+    exec sql begin work; // Начало новой транзакции
     exec sql select count(distinct spj.n_det) into :count
              from spj
              join j on spj.n_izd = j.n_izd
              where j.town = 'Париж';
 
     if(check_warnings("Task 1")) {
-        exec sql rollback work;
+        exec sql rollback work; // Откат транзакции
     }
     else {
         printf("Count: %d\n", count);
-        exec sql commit work;
+        exec sql commit work; // Завершение транзакции
     }   
 }
 
 void task_2() {
-    exec sql begin work;
+    exec sql begin work; // Начало новой транзакции
     exec sql update p
              set cvet = case 
                  when town = 'Рим' then (select min(cvet) from p where town = 'Лондон')
@@ -181,32 +182,33 @@ void task_2() {
              end
              where town in ('Лондон', 'Рим');
     if(check_warnings("Task 2")) {
-        exec sql rollback work;
+        exec sql rollback work; // Откат транзакции
     }
     else {
         printf("Changed: %ld records\n", sqlca.sqlerrd[2]);
-        exec sql commit work;
+        exec sql commit work; // Завершение транзакции
     }
 }
 
 void task_3() {
     int rows = 0;
 
-    exec sql begin declare section;
+    exec sql begin declare section; // Начало секции объявления переменных
     struct {
         char n_post[2 * 6 + 1];
         int kol;
         float avg_kol;
     } data;
-    exec sql end declare section;
+    exec sql end declare section; // Конец секции объявления переменных
 
     if (check_warnings("Declared")) {
-        exec sql rollback work;
+        exec sql rollback work; // Откат транзакции
         return;
     }
 
-    exec sql begin work;
-    exec sql declare curs_1 cursor for
+    exec sql begin work; // Начало новой транзакции
+    // Объявление курсора
+    exec sql declare curs_1 cursor for 
         select spj.n_post, spj.kol, avg_rim.avg_kol
         from s
         join spj on s.n_post = spj.n_post
@@ -216,13 +218,14 @@ void task_3() {
             where j.town = 'Рим'
             group by spj.n_post) as avg_rim on s.n_post = avg_rim.n_post
         where spj.kol >= 3 * avg_rim.avg_kol;
-    exec sql open curs_1;
+    exec sql open curs_1; // Открытие курсора
 
     if (check_warnings("Open cursor")) {
-        exec sql rollback work;
+        exec sql rollback work; // Откат транзакции
         return;
     }
 
+    // Извлечение следующей строки результата из открытого курсора
     exec sql fetch next curs_1 into :data.n_post, :data.kol, :data.avg_kol;
     if (sqlca.sqlcode == 0) {
         rows++;
@@ -231,6 +234,7 @@ void task_3() {
     }
 
     while (sqlca.sqlcode == 0) {
+        // Извлечение следующей строки результата из открытого курсора
         exec sql fetch next curs_1 into :data.n_post, :data.kol, :data.avg_kol;
 
         if (sqlca.sqlcode == 0) {
@@ -239,31 +243,32 @@ void task_3() {
         }
     }
 
-    exec sql close curs_1;
+    exec sql close curs_1; // Закрытие курсора
 
     if(check_warnings("Task 3")) {
-        exec sql rollback work;
+        exec sql rollback work; // Откат транзакции
     }
     else {
         printf("Find: %d records\n", rows);
-        exec sql commit work;
+        exec sql commit work; // Завершение транзакции
     }
 }
 
 void task_4() {
     int rows = 0;
 
-    exec sql begin declare section;
+    exec sql begin declare section; // Начало секции объявления переменныхы
     char n_izd[2 * 6 + 1];
-    exec sql end declare section;
+    exec sql end declare section; // Конец секции объявления переменных
 
     if (check_warnings("Declared")) {
-        exec sql rollback work;
+        exec sql rollback work; // Откат транзакции
         return;
     }
 
-    exec sql begin work;
-    exec sql declare curs_2 cursor for
+    exec sql begin work; // Начало новой транзакции
+    // Объявление курсора
+    exec sql declare curs_2 cursor for 
         select j.n_izd
         from j
         except
@@ -271,14 +276,15 @@ void task_4() {
         from spj
         join p on spj.n_det = p.n_det
         where p.cvet = 'Красный';
-    exec sql open curs_2;
+    exec sql open curs_2; // Открытие курсора
 
     if (check_warnings("Open cursor")) {
-        exec sql rollback work;
+        exec sql rollback work; // Откат транзакции
         return;
     }
 
-    exec sql fetch next curs_2 into :n_izd;
+    // Извлечение следующей строки результата из открытого курсора
+    exec sql fetch next curs_2 into :n_izd; 
     if (sqlca.sqlcode == 0) {
         rows++;
         printf("n_izd\n");
@@ -286,6 +292,7 @@ void task_4() {
     }
 
     while (sqlca.sqlcode == 0) {
+        // Извлечение следующей строки результата из открытого курсора
         exec sql fetch next curs_2 into :n_izd;
 
         if (sqlca.sqlcode == 0) {
@@ -294,35 +301,36 @@ void task_4() {
         }
     }
 
-    exec sql close curs_2;
+    exec sql close curs_2; // Закрытие курсора
 
     if(check_warnings("Task 4")) {
-        exec sql rollback work;
+        exec sql rollback work; // Откат транзакции
     }
     else {
         printf("Find: %d records\n", rows);
-        exec sql commit work;
+        exec sql commit work; // Завершение транзакции
     }
 }
 
 void task_5() {
     int rows = 0;
 
-    exec sql begin declare section;
+    exec sql begin declare section; // Начало секции объявления переменных
     struct {
         char n_izd[2 * 6 + 1];
         char name[2 * 20 + 1];
         char town[2 * 20 + 1];
     } j;
-    exec sql end declare section;
+    exec sql end declare section; // Конец секции объявления переменных
 
     if (check_warnings("Declared")) {
-        exec sql rollback work;
+        exec sql rollback work; // Откат транзакции
         return;
     }
 
-    exec sql begin work;
-    exec sql declare curs_3 cursor for
+    exec sql begin work; // Начало новой транзакции
+    // Объявление курсора
+    exec sql declare curs_3 cursor for 
         select *
         from j
         where j.n_izd not in (select distinct spj.n_izd
@@ -332,13 +340,13 @@ void task_5() {
         and exists (select 1
                     from spj
                     where spj.n_izd = j.n_izd);
-    exec sql open curs_3;
+    exec sql open curs_3; // Открытие курсора
 
     if (check_warnings("Open cursor")) {
-        exec sql rollback work;
+        exec sql rollback work; // Откат транзакции
         return;
     }
-
+    // Извлечение следующей строки результата из открытого курсора
     exec sql fetch next curs_3 into :j.n_izd, :j.name, :j.town;
     if (sqlca.sqlcode == 0) {
         rows++;
@@ -347,6 +355,7 @@ void task_5() {
     }
 
     while (sqlca.sqlcode == 0) {
+        // Извлечение следующей строки результата из открытого курсора
         exec sql fetch next curs_3 into :j.n_izd, :j.name, :j.town;
 
         if (sqlca.sqlcode == 0) {
@@ -355,13 +364,13 @@ void task_5() {
         }
     }
 
-    exec sql close curs_3;
+    exec sql close curs_3; // Закрытие курсора
 
     if(check_warnings("Task 5")) {
-        exec sql rollback work;
+        exec sql rollback work; // Откат транзакции
     }
     else {
         printf("Find: %d records\n", rows);
-        exec sql commit work;
+        exec sql commit work; // Завершение транзакции
     }
 }
