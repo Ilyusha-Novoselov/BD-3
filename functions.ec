@@ -148,7 +148,7 @@ void table_rollback() {
 
 void task_1() {
     exec sql begin declare section;
-    int count;
+    int count = 0;
     exec sql end declare section;
 
     exec sql begin work;
@@ -156,8 +156,14 @@ void task_1() {
              from spj
              join j on spj.n_izd = j.n_izd
              where j.town = 'Париж';
-    exec sql commit work;
-    printf("Count: %d\n", count);
+
+    if(check_warnings("Task 1")) {
+        exec sql rollback work;
+    }
+    else {
+        printf("Count: %d\n", count);
+        exec sql commit work;
+    }   
 }
 
 void task_2() {
