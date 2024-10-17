@@ -358,10 +358,10 @@ void task_5() {
             rows++;
             // Проверка на NULL
             if(name_ind < 0) {
-                strcpy(j.name, "NULL");
+                strcpy(j.name, "Пусто");
             }
             if(town_ind < 0) {
-                strcpy(j.town, "NULL");
+                strcpy(j.town, "Пусто");
             }
             printf("%s\t\t%s\t%s\n", j.n_izd, j.name, j.town);
         } else {
