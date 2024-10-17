@@ -258,12 +258,6 @@ void task_4() {
     char n_izd[2 * 6 + 1];
     exec sql end declare section; // Конец секции объявления переменных
 
-    if (check_warnings("Declared")) {
-        exec sql rollback work; // Откат транзакции
-        return;
-    }
-
-    exec sql begin work; // Начало новой транзакции
     // Объявление курсора
     exec sql declare curs_2 cursor for 
         select j.n_izd
@@ -275,40 +269,40 @@ void task_4() {
                             from spj
                             join p on spj.n_det = p.n_det
                             where p.cvet = 'Красный');
-    exec sql open curs_2; // Открытие курсора
 
-    if (check_warnings("Open cursor")) {
-        exec sql rollback work; // Откат транзакции
+    if (check_warnings("Task 4 => Declare cursor")) {
         return;
     }
 
-    // Извлечение следующей строки результата из открытого курсора
-    exec sql fetch next curs_2 into :n_izd; 
-    if (sqlca.sqlcode == 0) {
-        rows++;
-        printf("n_izd\n");
-        printf("%s\n", n_izd);
-    }
+    exec sql begin work; // Начало новой транзакции
+    exec sql open curs_2; // Открытие курсора
 
     while (sqlca.sqlcode == 0) {
         // Извлечение следующей строки результата из открытого курсора
         exec sql fetch next curs_2 into :n_izd;
 
+        if(!rows && sqlca.sqlcode == 100) {
+            printf("Данных нет\n");
+            break;
+        }
+
         if (sqlca.sqlcode == 0) {
+            if(!rows) {
+                printf("n_izd\n");
+            }
             rows++;
             printf("%s\n", n_izd);
+        } else {
+            if(sqlca.sqlcode < 0) {
+                exec sql close curs_2;
+                exec sql rollback work;
+                return;
+            }
         }
     }
 
     exec sql close curs_2; // Закрытие курсора
-
-    if(check_warnings("Task 4")) {
-        exec sql rollback work; // Откат транзакции
-    }
-    else {
-        printf("Find: %d records\n", rows);
-        exec sql commit work; // Завершение транзакции
-    }
+    exec sql commit work; // Завершение транзакции
 }
 
 void task_5() {
