@@ -319,12 +319,6 @@ void task_5() {
     int town_ind;
     exec sql end declare section; // Конец секции объявления переменных
 
-    if (check_warnings("Declared")) {
-        exec sql rollback work; // Откат транзакции
-        return;
-    }
-
-    exec sql begin work; // Начало новой транзакции
     // Объявление курсора
     exec sql declare curs_3 cursor for 
         select *
@@ -334,32 +328,27 @@ void task_5() {
                         join p on p.n_det=spj.n_det
                         group by spj.n_izd
                         having min(p.ves) > 12);
-    exec sql open curs_3; // Открытие курсора
 
-    if (check_warnings("Open cursor")) {
-        exec sql rollback work; // Откат транзакции
+    if (check_warnings("Task 5 => Declare cursor")) {
         return;
     }
-    // Извлечение следующей строки результата из открытого курсора
-    exec sql fetch next curs_3 into :j.n_izd, :j.name:name_ind, :j.town:town_ind;
-    if (sqlca.sqlcode == 0) {
-        rows++;
-        printf("n_izd\t\tname\t\t\ttown\n");
-        // Проверка на NULL
-        if(name_ind < 0) {
-            strcpy(j.name, "NULL");
-        }
-        if(town_ind < 0) {
-            strcpy(j.town, "NULL");
-        }
-        printf("%s\t\t%s\t%s\n", j.n_izd, j.name, j.town);
-    }
+
+    exec sql begin work; // Начало новой транзакции
+    exec sql open curs_3; // Открытие курсора
 
     while (sqlca.sqlcode == 0) {
         // Извлечение следующей строки результата из открытого курсора
         exec sql fetch next curs_3 into :j.n_izd, :j.name:name_ind, :j.town:town_ind;
 
+        if(!rows && sqlca.sqlcode == 100) {
+            printf("Данных нет\n");
+            break;
+        }
+
         if (sqlca.sqlcode == 0) {
+            if(!rows) {
+                printf("n_izd\t\tname\t\t\ttown\n");
+            }
             rows++;
             // Проверка на NULL
             if(name_ind < 0) {
@@ -369,16 +358,15 @@ void task_5() {
                 strcpy(j.town, "NULL");
             }
             printf("%s\t\t%s\t%s\n", j.n_izd, j.name, j.town);
+        } else {
+            if(sqlca.sqlcode < 0) {
+                exec sql close curs_3;
+                exec sql rollback work;
+                return;
+            }
         }
     }
 
     exec sql close curs_3; // Закрытие курсора
-
-    if(check_warnings("Task 5")) {
-        exec sql rollback work; // Откат транзакции
-    }
-    else {
-        printf("Find: %d records\n", rows);
-        exec sql commit work; // Завершение транзакции
-    }
+    exec sql commit work; // Завершение транзакции
 }
