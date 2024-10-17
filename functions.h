@@ -11,6 +11,8 @@ void print_warnings(const char* theOperation);
 void connect_db(const char* theLogin, const char* thePassword);
 // Функция для подключения к схеме
 void connect_schema(const char* theSchema);
+// Функция отключения от бд
+void disconnect_db();
 
 // Функция для сброса таблиц
 void table_rollback();

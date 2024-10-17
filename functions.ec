@@ -48,6 +48,12 @@ void connect_schema(const char* theSchema) {
     check_errors("Connect schema");
 }
 
+void disconnect_db() {
+    exec sql disconnect; // Отключение от базы данных
+    check_errors("Disconnect from db");
+    printf("Disconnected from the database successfully.\n");
+}
+
 void table_rollback() {
     exec sql begin work; // Начало новой транзакции
 

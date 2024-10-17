@@ -10,15 +10,14 @@ int main() {
     connect_db(login, password);
     connect_schema(schema);
 
-    int n;
-    while(1) {
+    int n = 1;
+    while(n) {
         printf("\nВведите номер задания:\n[1-5] - номера заданий\n0 - выход\n6 - сброс таблиц до начального состояния\n");
         scanf("%d", &n);
         printf("Результат:\n\n");
         switch(n) {
             case 0:
-                printf("Завершение программы\n");
-                return 0;
+                break;
             case 1:
                 task_1();
                 break;
@@ -42,6 +41,8 @@ int main() {
                 break;
         }
     }
+
+    disconnect_db();
 
     return 0;
 }
