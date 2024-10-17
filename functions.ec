@@ -152,11 +152,6 @@ void task_1() {
     int count = 0;
     exec sql end declare section; // Конец секции объявления переменных
 
-    if (check_warnings("Declared")) {
-        exec sql rollback work; // Откат транзакции
-        return;
-    }
-
     exec sql begin work; // Начало новой транзакции
     exec sql select count(distinct spj.n_det) into:count
              from spj
@@ -204,12 +199,6 @@ void task_3() {
     int kol_ind;
     exec sql end declare section; // Конец секции объявления переменных
 
-    if (check_warnings("Declared")) {
-        exec sql rollback work; // Откат транзакции
-        return;
-    }
-
-    exec sql begin work; // Начало новой транзакции
     // Объявление курсора
     exec sql declare curs_1 cursor for 
         select spj.n_post, spj.kol, avg_rim.avg_kol
@@ -221,48 +210,45 @@ void task_3() {
             where j.town = 'Рим'
             group by spj.n_post) as avg_rim on s.n_post = avg_rim.n_post
         where spj.kol >= 3 * avg_rim.avg_kol;
-    exec sql open curs_1; // Открытие курсора
 
-    if (check_warnings("Open cursor")) {
-        exec sql rollback work; // Откат транзакции
+    if (check_warnings("Task 3 => Declare cursor")) {
         return;
     }
 
-    // Извлечение следующей строки результата из открытого курсора
-    exec sql fetch next curs_1 into :data.n_post, :data.kol:kol_ind, :data.avg_kol;
-    if (sqlca.sqlcode == 0) {
-        rows++;
-        printf("Поставщик\tОбъем поставки\tСредний объем поставки\n");
-        // Проверка на NULL
-        if(kol_ind < 0) {
-            data.kol = 0;
-        }
-        printf("%s\t\t%d\t\t%f\n", data.n_post, data.kol, data.avg_kol);
-    }
+    exec sql begin work; // Начало новой транзакции
+
+    exec sql open curs_1; // Открытие курсора
 
     while (sqlca.sqlcode == 0) {
         // Извлечение следующей строки результата из открытого курсора
         exec sql fetch next curs_1 into :data.n_post, :data.kol:kol_ind, :data.avg_kol;
 
+        if(!rows && sqlca.sqlcode == 100) {
+            printf("Данных нет\n");
+            break;
+        }
+
         if (sqlca.sqlcode == 0) {
+            if(!rows) {
+                printf("Поставщик\tОбъем поставки\tСредний объем поставки\n");
+            }
             rows++;
             // Проверка на NULL
             if(kol_ind < 0) {
                 data.kol = 0;
             }
             printf("%s\t\t%d\t\t%f\n", data.n_post, data.kol, data.avg_kol);
+        } else {
+            if(sqlca.sqlcode < 0) {
+                exec sql close curs_1;
+                exec sql rollback work;
+                return;
+            }
         }
     }
 
     exec sql close curs_1; // Закрытие курсора
-
-    if(check_warnings("Task 3")) {
-        exec sql rollback work; // Откат транзакции
-    }
-    else {
-        printf("Find: %d records\n", rows);
-        exec sql commit work; // Завершение транзакции
-    }
+    exec sql commit work; // Завершение транзакции
 }
 
 void task_4() {
